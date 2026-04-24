@@ -28,6 +28,7 @@ import { McqView } from './McqView'; // Imported for MCQ Flow
 import { MiniPlayer } from './MiniPlayer'; // Imported for Audio Flow
 import { HistoryPage } from './HistoryPage';
 import TeacherStore from './TeacherStore';
+import { Auth } from './Auth';
 import { Leaderboard } from './Leaderboard';
 import { SpinWheel } from './SpinWheel';
 import { fetchChapters, generateCustomNotes } from '../services/groq'; // Needed for Video Flow
@@ -1299,6 +1300,20 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
 
       // 4. LEGACY TABS (Mapped to new structure or kept as sub-views)
       if (activeTab === 'CUSTOM_PAGE') return <CustomBloggerPage onBack={() => onTabChange('HOME')} settings={settings} />;
+      if (activeTab === 'AUTH' as any) return (
+          <div className="p-4 flex items-center justify-center min-h-[50vh]">
+              <Auth onLogin={u => {
+                  if (typeof window !== 'undefined') {
+                      localStorage.setItem('nst_current_user', JSON.stringify(u));
+                  }
+                  handleUserUpdate(u);
+                  onTabChange('HOME');
+                  window.location.reload();
+              }} logActivity={(action, details, u) => {
+                  console.log("Auth Activity:", action, details);
+              }} />
+          </div>
+      );
       if ((activeTab as string) === 'DEEP_ANALYSIS') return <AiDeepAnalysis user={user} settings={settings} onUpdateUser={handleUserUpdate} onBack={() => onTabChange('HOME')} />;
       if (activeTab === 'UPDATES') return <UniversalInfoPage onBack={() => onTabChange('HOME')} />;
       if ((activeTab as string) === 'ANALYTICS') return <AnalyticsPage user={user} onBack={() => onTabChange('HOME')} settings={settings} onNavigateToChapter={onNavigateToChapter} />;
@@ -1316,6 +1331,16 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
       if ((activeTab as any) === 'TEACHER_STORE') {
           return <TeacherStore user={user} settings={settings} onRedeemSuccess={handleUserUpdate} />;
       }
+      if (activeTab === 'AUTH') return (
+          <div className="p-4 flex items-center justify-center min-h-[50vh]">
+              <Auth onLogin={u => {
+                  handleUserUpdate(u);
+                  onTabChange('HOME');
+              }} logActivity={(action, details, u) => {
+                  console.log("Auth Activity:", action, details);
+              }} />
+          </div>
+      );
       if (activeTab === 'PROFILE') return (
                 <div className="animate-in fade-in zoom-in duration-300 pb-4">
                     <div className={`rounded-3xl p-8 text-center mb-6 shadow-sm relative overflow-hidden transition-all duration-500 ${
@@ -1656,12 +1681,18 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                                 </span>
                             </button>
 
-                            {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN' || isImpersonating) && (
+                            {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN') && (
                                 <button
-                                    onClick={onLogout}
+                                    onClick={() => {
+                                        if (user.id.startsWith("guest_")) {
+                                            onTabChange('AUTH' as any);
+                                        } else {
+                                            onLogout();
+                                        }
+                                    }}
                                     className="bg-red-50 p-3 rounded-xl border border-red-100 flex items-center justify-center gap-2 hover:bg-red-100 transition-colors text-red-600 font-bold text-sm"
                                 >
-                                    <LogOut size={16} /> Logout
+                                    <LogOut size={16} /> {user.id.startsWith("guest_") ? "Login / Create Account" : "Logout"}
                                 </button>
                             )}
                         </div>

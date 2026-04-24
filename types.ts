@@ -1046,7 +1046,7 @@ export interface LessonContent {
   analytics?: any; // For passing full analytics data
 }
 
-export type ViewState = 'ONBOARDING' | 'BOARDS' | 'CLASSES' | 'STREAMS' | 'SUBJECTS' | 'CHAPTERS' | 'LESSON' | 'ADMIN_DASHBOARD' | 'AUDIO_STUDIO' | 'STUDENT_DASHBOARD' | 'UNIVERSAL_CHAT' | 'RULES' | 'IIC' | 'LEADERBOARD';
+export type ViewState = 'ONBOARDING' | 'BOARDS' | 'CLASSES' | 'STREAMS' | 'SUBJECTS' | 'CHAPTERS' | 'LESSON' | 'ADMIN_DASHBOARD' | 'AUDIO_STUDIO' | 'STUDENT_DASHBOARD' | 'UNIVERSAL_CHAT' | 'RULES' | 'IIC' | 'LEADERBOARD' | 'AUTH';
 
 export interface WeeklyTest {
   id: string;

@@ -117,14 +117,21 @@ export const StudentSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, u
                 </div>
 
                 {/* Footer Actions */}
-                {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN' || isImpersonating) && (
+                {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN') && (
                     <div className="p-4 border-t border-slate-100 bg-slate-50">
                         <button
-                            onClick={onLogout}
+                            onClick={() => {
+                                if (user.id.startsWith("guest_")) {
+                                    onNavigate('AUTH' as any);
+                                    onClose();
+                                } else {
+                                    onLogout();
+                                }
+                            }}
                             className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold transition-all active:scale-95"
                         >
                             <LogOut size={20} />
-                            Logout
+                            {user.id.startsWith("guest_") ? "Login / Create Account" : "Logout"}
                         </button>
                     </div>
                 )}
