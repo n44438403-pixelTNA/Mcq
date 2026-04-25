@@ -17,12 +17,9 @@ export const StudentSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, u
         // --- LEARNING & PROGRESS ---
         { id: 'HISTORY', icon: History, label: 'Cloud History', color: 'text-slate-600', featureId: 'f21', category: 'LEARNING' },
         { id: 'ANALYTICS', icon: Trophy, label: 'Test Analysis', color: 'text-teal-600', featureId: 'f50', category: 'LEARNING' },
-        { id: 'AI_HISTORY' as any, icon: BrainCircuit, label: 'AI History', color: 'text-indigo-600', featureId: 'f101', category: 'LEARNING' },
-        { id: 'DOWNLOADS' as any, icon: Download, label: 'Offline Downloads', color: 'text-blue-500', category: 'LEARNING' },
 
         // --- PREMIUM & REWARDS ---
         { id: 'STORE', icon: Crown, label: 'Premium Store', color: 'text-yellow-600', featureId: 'f12', category: 'PREMIUM' },
-        { id: 'SUB_HISTORY' as any, icon: CreditCard, label: 'My Plan', color: 'text-blue-600', featureId: 'f11', category: 'PREMIUM' },
         { id: 'REDEEM', icon: Gift, label: 'Redeem Code', color: 'text-pink-600', category: 'PREMIUM' },
 
         // --- FUN & GAMES ---

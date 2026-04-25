@@ -1433,10 +1433,7 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                     </div>
 
                     <div className="space-y-4">
-                        <div className="bg-white rounded-xl p-4 border border-slate-200">
-                            <p className="text-xs font-bold text-slate-600 uppercase mb-1">Class</p>
-                            <p className="text-lg font-black text-slate-800">{user.classLevel} • {user.board} • {user.stream}</p>
-                        </div>
+
 
                         <div className="bg-white rounded-xl p-4 border border-slate-200">
                             <p className="text-xs font-bold text-slate-600 uppercase mb-1">Subscription</p>
@@ -1638,25 +1635,9 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                                 <span className="text-[10px] font-bold text-slate-700">Marksheet</span>
                             </button>
 
-                            <button
-                                onClick={() => onTabChange('SUB_HISTORY' as any)}
-                                className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                            >
-                                <History size={20} className="text-purple-500" />
-                                <span className="text-[10px] font-bold text-slate-700">Sub History</span>
-                            </button>
 
-                            {/* TEACHER UPGRADE / STORE BUTTON */}
-                            <button
-                                onClick={() => onTabChange('TEACHER_STORE' as any)}
-                                className="bg-gradient-to-br from-purple-50 to-indigo-50 p-3 rounded-xl border border-purple-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-purple-100 transition-colors relative overflow-hidden group"
-                            >
-                                <div className="absolute inset-0 bg-white/20 group-hover:animate-pulse"></div>
-                                <Crown size={20} className="text-purple-600 relative z-10" />
-                                <span className="text-[10px] font-bold text-purple-800 relative z-10 text-center leading-tight">
-                                    {user.role === 'TEACHER' ? 'Teacher Store' : 'Upgrade to Teacher'}
-                                </span>
-                            </button>
+
+
 
                             <button
                                 onClick={() => {
@@ -2261,26 +2242,7 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                     );
                 })()}
 
-                {(() => {
-                    const access = getFeatureAccess('AI_CENTER');
-                    if (access.isHidden) return null;
-                    const isLocked = !access.hasAccess;
-                    return (
-                        <button
-                            onClick={() => {
-                                if (isLocked) { showAlert("🔒 Locked by Admin.", "ERROR"); return; }
-                                onTabChange('AI_HUB');
-                            }}
-                            className={`flex flex-col items-center justify-center w-full h-full relative ${activeTab === 'AI_HUB' ? 'text-blue-600' : 'text-slate-500'} ${isLocked ? 'opacity-50 grayscale' : ''}`}
-                        >
-                            <div className="relative">
-                                <Sparkles size={20} fill={activeTab === 'AI_HUB' && !isLocked ? "currentColor" : "none"} />
-                                {isLocked && <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 border border-white"><Lock size={8} className="text-white"/></div>}
-                            </div>
-                            <span className="text-[9px] font-bold mt-1">AI Hub</span>
-                        </button>
-                    );
-                })()}
+
 
                 {(() => {
                     const access = getFeatureAccess('HISTORY_PAGE');
