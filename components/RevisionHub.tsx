@@ -10,6 +10,7 @@ import { RevisionSession } from './RevisionSession';
 import { TodayRevisionView } from './TodayRevisionView';
 import { TodayMcqSession } from './TodayMcqSession';
 import { TopicChart } from './TopicChart';
+import { MasteryDonut } from './MasteryDonut';
 import { speakWithHighlight } from '../utils/ttsHighlighter';
 import { LEVEL_UP_CONFIG } from '../constants';
 import { MarksheetCard } from './MarksheetCard'; // Import MarksheetCard
@@ -668,18 +669,8 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
     // Only blocked if Level System locks it entirely.
 
     const handleTopicClick = (t: TopicItem) => {
-        if (hubMode === 'FREE') {
-            setAlertConfig({
-                isOpen: true,
-                type: 'INFO',
-                title: 'Free Mode Restriction',
-                message: `📖 In Free Mode, we tell you WHAT to study ("${t.name}").\nTo access deep content, analysis, and instant revision tools, switch to Premium Mode.`
-            });
-            return;
-        }
-
-        // Logic for Basic User (Sundays Only) - Preserved if relevant, but user wants clear Free/Premium split now.
-        // Assuming Premium Mode covers Basic/Ultra logic.
+        // Free users can also click topics — Today Revision is free for everyone now.
+        // Logic for Basic User (Sundays Only) - kept only for premium hub mode if needed
         if (user.subscriptionLevel === 'BASIC' && now.getDay() !== 0 && hubMode === 'PREMIUM') {
              setAlertConfig({
                 isOpen: true,
@@ -749,128 +740,6 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
     return (
         <div onScroll={handleScroll} className="space-y-4 px-4 pt-2 pb-6 animate-in fade-in relative h-[calc(100vh-80px)] overflow-y-auto">
 
-            {/* --- HERO HEADER --- */}
-            <div className={`transition-all duration-300 origin-top overflow-hidden ${showHeader ? 'opacity-100 mb-4' : 'opacity-0 max-h-0 mb-0'}`}>
-                <div className="bg-white rounded-3xl p-6 shadow-md border border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-[var(--primary)]/10 text-[var(--primary)] rounded-xl">
-                            <BrainCircuit size={28} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Revision Hub</h2>
-                            <p className="text-slate-600 text-xs font-medium mt-0.5">
-                                AI-powered Spaced Repetition. Master concepts permanently.
-                            </p>
-                        </div>
-                    </div>
-
-                    <button onClick={toggleFullScreen} className="p-2 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors" title="Full Screen">
-                        <Maximize size={20} />
-                    </button>
-                </div>
-            </div>
-
-            {/* --- STATS GRID --- */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 px-2 sm:px-0 mb-6">
-                {/* Summary Cards */}
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md flex flex-col gap-1 items-center justify-center text-center hover:shadow-lg transition-shadow">
-                    <div className="p-2 bg-[var(--primary)]/10 text-[var(--primary)] rounded-xl mb-1">
-                        <BrainCircuit size={20} />
-                    </div>
-                    <span className="text-2xl font-black text-slate-800">{masteryScore}%</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Mastery</span>
-                </div>
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md flex flex-col gap-1 items-center justify-center text-center hover:shadow-lg transition-shadow">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-xl mb-1">
-                        <BookOpen size={20} />
-                    </div>
-                    <span className="text-2xl font-black text-slate-800">{totalTopics}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Topics Tracked</span>
-                </div>
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md flex flex-col gap-1 items-center justify-center text-center hover:shadow-lg transition-shadow">
-                    <div className="p-2 bg-green-50 text-green-600 rounded-xl mb-1">
-                        <CheckCircle size={20} />
-                    </div>
-                    <span className="text-2xl font-black text-slate-800">{strongTopics}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Strong/Mastered</span>
-                </div>
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md flex flex-col gap-1 items-center justify-center text-center relative overflow-hidden hover:shadow-lg transition-shadow">
-                     <div className="absolute top-0 right-0 w-16 h-16 bg-red-50 rounded-bl-full -z-10"></div>
-                     <div className="p-2 bg-red-50 text-red-600 rounded-xl mb-1">
-                        <AlertTriangle size={20} />
-                    </div>
-                    <span className="text-2xl font-black text-red-600">{weakTopics}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Weak Areas</span>
-                </div>
-            </div>
-
-            {/* STICKY HEADER & MODE SWITCHER */}
-            <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-30">
-                <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-3">
-                    <div className="flex items-center gap-2">
-                        <BrainCircuit className={hubMode === 'PREMIUM' ? "text-[var(--primary)]" : "text-slate-600"} size={24} />
-                        <h2 className="text-xl font-black text-slate-800 hidden sm:block">
-                            {hubMode === 'PREMIUM' ? 'Premium Hub' : 'Revision Hub'}
-                        </h2>
-                    </div>
-
-                    {/* MODE SWITCHER (Integrated) */}
-                    <div className="bg-slate-100 p-1.5 rounded-full flex gap-1 shadow-inner border border-slate-200 relative">
-                        {(() => {
-                            const freeAccess = checkFeatureAccess('REVISION_HUB_FREE', user, settings || {});
-                            return (
-                                <button
-                                    onClick={() => {
-                                        if (freeAccess.hasAccess) setHubMode('FREE');
-                                        else setAlertConfig({isOpen: true, type: 'INFO', title: "Locked", message: "Official Notice: Free Hub content is currently disabled by Admin."});
-                                    }}
-                                    className={`relative z-10 px-4 py-1.5 rounded-full text-xs font-black transition-all duration-300 flex items-center gap-1.5 ${
-                                        hubMode === 'FREE' ? 'bg-white shadow-md text-slate-800 scale-105' : 'text-slate-600 hover:text-slate-700'
-                                    } ${!freeAccess.hasAccess ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                                >
-                                    <Layout size={14} className={hubMode === 'FREE' ? 'text-blue-600' : ''} /> <span>Free Hub</span>
-                                    {!freeAccess.hasAccess && <Lock size={10} />}
-                                </button>
-                            );
-                        })()}
-
-                        {(() => {
-                            const premiumAccess = checkFeatureAccess('REVISION_HUB_PREMIUM', user, settings || {});
-                            return (
-                                <button
-                                    onClick={() => {
-                                        if (premiumAccess.hasAccess) setHubMode('PREMIUM');
-                                        else setAlertConfig({
-                                            isOpen: true,
-                                            type: 'INFO',
-                                            title: 'Premium Upgrade Required',
-                                            message: "Official Notice: This content is locked for Premium Upgrade. Please upgrade to access Premium Revision Notes."
-                                        });
-                                    }}
-                                    className={`relative z-10 px-4 py-1.5 rounded-full text-xs font-black transition-all duration-300 flex items-center gap-1.5 ${
-                                        hubMode === 'PREMIUM' ? 'bg-gradient-to-r from-[var(--primary)] to-purple-600 shadow-md shadow-purple-200 text-white scale-105' : 'text-slate-600 hover:text-slate-700'
-                                    } ${!premiumAccess.hasAccess ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                                >
-                                    <Crown size={14} className={hubMode === 'PREMIUM' ? 'text-yellow-300' : ''} /> <span>Premium</span>
-                                    {!premiumAccess.hasAccess && <Lock size={10} />}
-                                </button>
-                            );
-                        })()}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                    {/* VIEW TOGGLE */}
-                    <button
-                        onClick={() => setScoreViewMode(prev => prev === 'LATEST' ? 'ALL_TIME' : 'LATEST')}
-                        className={`text-[10px] font-black px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1 shadow-sm ${scoreViewMode === 'LATEST' ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'}`}
-                        title={scoreViewMode === 'LATEST' ? 'Showing Latest Result' : 'Showing All-Time Average'}
-                    >
-                        {scoreViewMode === 'LATEST' ? 'LATEST SCORE' : 'AVERAGE SCORE'}
-                    </button>
-                </div>
-            </div>
-
             {/* DAILY BRIEFING */}
             <div className="bg-white p-5 rounded-3xl border border-slate-100 flex items-center gap-4 shadow-md relative overflow-hidden z-10 mb-6">
                 <div className="bg-[var(--primary)]/10 p-3 rounded-xl shadow-sm text-[var(--primary)] z-10">
@@ -907,33 +776,19 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
 
             </div>
 
-            {/* SUB-TABS FOR TOPIC STRENGTH (Only visible when active) */}
+            {/* MASTERY DONUT — clickable circular chart that drives the filter */}
             {['WEAK', 'AVERAGE', 'STRONG', 'EXCELLENT'].includes(activeFilter) && (
-                <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-                    {[
-                        { id: 'WEAK', label: 'Weak', icon: AlertIcon, color: 'red' },
-                        { id: 'AVERAGE', label: 'Average', icon: TrendingUp, color: 'orange' },
-                        { id: 'STRONG', label: 'Strong', icon: CheckCircle, color: 'green' },
-                        { id: 'EXCELLENT', label: 'Mastered', icon: Star, color: 'blue' }
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveFilter(tab.id as any)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${
-                                activeFilter === tab.id
-                                ? `bg-${tab.color}-100 text-${tab.color}-700 border-${tab.color}-200`
-                                : 'bg-white text-slate-600 border-slate-200'
-                            }`}
-                        >
-                            <tab.icon size={12} className={activeFilter === tab.id ? `fill-${tab.color}-700` : ''} />
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="mb-4">
+                    <MasteryDonut
+                        topics={topics}
+                        activeFilter={activeFilter as any}
+                        onSelect={(id) => setActiveFilter(id)}
+                    />
                 </div>
             )}
 
             {/* SESSIONS */}
-            {showTodayRevisionSession && hubMode === 'PREMIUM' && (
+            {showTodayRevisionSession && (
                 <TodayRevisionView
                     user={user}
                     topics={pendingNotes}
@@ -971,7 +826,7 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
                 />
             )}
 
-             {showTodayMcqSession && hubMode === 'PREMIUM' && (
+             {showTodayMcqSession && (
                 <TodayMcqSession
                     user={user}
                     topics={pendingMcqs}
@@ -1141,37 +996,23 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
                                 <div className="w-full pt-2">
                                     <button
                                         onClick={() => {
-                                            if (hubMode === 'FREE') {
-                                                setAlertConfig({
-                                                    isOpen: true,
-                                                    type: 'INFO',
-                                                    title: 'Locked Content',
-                                                    message: 'Notes and MCQs are locked in Free Mode. Upgrade to Premium to start revising.'
-                                                });
-                                                return;
-                                            }
                                             if (user.subscriptionLevel === 'BASIC' && now.getDay() !== 0) {
                                                 setAlertConfig({isOpen: true, type: 'INFO', title: 'Sunday Only', message: 'Basic Plan allows revision sessions only on Sundays.'});
                                             } else {
                                                 setShowTodayRevisionSession(true);
                                             }
                                         }}
-                                        className={`w-full py-3 rounded-xl text-sm font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${
-                                            hubMode === 'FREE'
-                                            ? 'bg-slate-200 text-slate-600 cursor-not-allowed shadow-none'
-                                            : 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700'
-                                        }`}
+                                        className="w-full py-3 rounded-xl text-sm font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700"
                                     >
-                                        {hubMode === 'FREE' ? <Lock size={18} /> : <BookOpen size={18} />}
-                                        {hubMode === 'FREE' ? 'Content Locked' : 'Read All Notes'}
+                                        <BookOpen size={18} /> Read All Notes
                                     </button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* PENDING MCQs (Premium Only) */}
-                    {hubMode === 'PREMIUM' && (
+                    {/* PENDING MCQs — Available for all users (Free + Premium) */}
+                    {(
                         <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
@@ -1220,7 +1061,7 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
                     )}
 
                     {/* COMPLETED TODAY (Premium Only) */}
-                     {completedToday.length > 0 && hubMode === 'PREMIUM' && (
+                     {completedToday.length > 0 && (
                         <div className="bg-slate-50 rounded-3xl border border-slate-200 p-5 transition-all">
                             <div
                                 onClick={() => setShowCompletedHistory(!showCompletedHistory)}
@@ -1256,7 +1097,7 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
                     )}
 
                     {/* YESTERDAY REPORT (Premium Only) */}
-                    {completedYesterday.length > 0 && hubMode === 'PREMIUM' && (
+                    {completedYesterday.length > 0 && (
                         <div className="bg-slate-50 rounded-3xl border border-slate-200 p-5 transition-all mt-4">
                             <div
                                 onClick={() => setShowYesterdayHistory(!showYesterdayHistory)}
@@ -1291,8 +1132,6 @@ const RevisionHubComponent: React.FC<Props> = ({ user, onTabChange, settings, on
             {/* 2. FILTERED VIEWS (WEEKLY BREAKDOWN) */}
             {activeFilter !== 'TODAY' && activeFilter !== 'MCQ' && activeFilter !== 'MISTAKES' && (
                 <div className="space-y-6 relative z-10">
-                     <TopicChart topics={topics.filter(t => t.status === activeFilter)} type={activeFilter as any} />
-
                      {(() => {
                         const relevantTopics = topics.filter(t => t.status === activeFilter);
                         const weeklyData = getWeeklyBreakdown(relevantTopics);

@@ -59,7 +59,7 @@ const TermsPopup: React.FC<{ onClose: () => void, text?: string }> = ({ onClose,
 
 const App: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isAppLoading, setIsAppLoading] = useState(() => sessionStorage.getItem('nst_has_loaded') !== 'true');
+  const [isAppLoading, setIsAppLoading] = useState(false);
 
   useEffect(() => {
     if (!isAppLoading) {
@@ -221,6 +221,7 @@ const App: React.FC = () => {
         appName: 'SWG',
         appShortName: 'IIC',
         aiName: 'IIC AI',
+        homeRedirectUrl: 'https://fd493973-952c-47c6-ba7a-d7dc693f3184-00-6bqsgud3iasz.pike.replit.dev/',
         themeColor: '#3b82f6',
         maintenanceMode: false,
         maintenanceMessage: 'We are upgrading our servers. Please check back later.',
@@ -511,9 +512,10 @@ const App: React.FC = () => {
               }
               setState(prev => ({...prev, user: updatedUser}));
           }
-          if (newReward) {
-              setActiveReward(newReward);
-          }
+          // POPUPS DISABLED: Bonus credits are still granted silently, no popup shown.
+          // if (newReward) {
+          //     setActiveReward(newReward);
+          // }
       }
   }, [state.user?.id, state.user?.lastLoginRewardDate, activeReward, state.originalAdmin]); // Re-run when user or activeReward changes
 
@@ -893,7 +895,26 @@ const App: React.FC = () => {
         localStorage.removeItem('nst_current_user');
       }
     } else {
-      // console.log("No user found in localStorage.");
+      const guestUser = {
+          id: "guest_" + Date.now(),
+          displayId: "GUEST",
+          name: "Guest Student",
+          role: "STUDENT",
+          isPremium: false,
+          board: "CBSE",
+          classLevel: "6",
+          profileCompleted: true,
+          progress: {}
+      };
+      setState(prev => ({
+          ...prev,
+          user: guestUser,
+          view: "STUDENT_DASHBOARD",
+          selectedBoard: "CBSE",
+          selectedClass: "6",
+          language: "English",
+          showWelcome: !hasSeenWelcome && !!hasAcceptedTerms
+      }));
     }
   }, []);
 
@@ -1087,10 +1108,38 @@ const App: React.FC = () => {
   const [showCloudRecoveryModal, setShowCloudRecoveryModal] = useState(false);
 
   const performLogout = () => {
+    if (state.user && state.user.id.startsWith('guest_')) {
+        setState(prev => ({ ...prev, view: 'AUTH' }));
+        return;
+    }
     logActivity("LOGOUT", "User Logged Out");
     localStorage.removeItem('nst_current_user');
     localStorage.removeItem('nst_user_history'); // Clear Saved Notes on logout to prevent bleeding across accounts
-    setState(prev => ({ ...prev, user: null, originalAdmin: null, view: 'BOARDS', selectedBoard: null, selectedClass: null, selectedStream: null, selectedSubject: null, lessonContent: null, language: 'English' }));
+
+    // Auto-create guest user again
+    const guestUser = {
+        id: "guest_" + Date.now(),
+        displayId: "GUEST",
+        name: "Guest Student",
+        role: "STUDENT",
+        isPremium: false,
+        board: "CBSE",
+        classLevel: "6",
+        profileCompleted: true,
+        progress: {}
+    };
+    setState(prev => ({
+        ...prev,
+        user: guestUser as any,
+        originalAdmin: null,
+        view: 'AUTH',
+        selectedBoard: "CBSE",
+        selectedClass: "6",
+        selectedStream: null,
+        selectedSubject: null,
+        lessonContent: null,
+        language: 'English'
+    }));
     setDailyStudySeconds(0);
   };
 
@@ -2431,6 +2480,8 @@ const App: React.FC = () => {
 
       <main className={`flex-1 w-full max-w-6xl mx-auto ${isFullScreen ? 'p-0' : 'p-4 mb-8'}`}>
         {!state.user ? (
+            <Auth onLogin={handleLogin} logActivity={logActivity} />
+        ) : state.view === 'AUTH' ? (
             <Auth onLogin={handleLogin} logActivity={logActivity} />
         ) : (
             <ErrorBoundary>

@@ -65,34 +65,43 @@ export const SubjectSelection: React.FC<Props> = ({ classLevel, stream, board, o
   let displaySubjects: Subject[] = [];
   let subSubjects: Subject[] = [];
 
-  const scienceGroup = ['Physics', 'Chemistry', 'Biology'];
-  const sstGroup9to12 = ['History', 'Geography', 'Political Science', 'Economics'];
-  const sstGroup6to8 = ['History', 'Geography', 'Political Science'];
+  const scienceGroup = ['Physics', 'Chemistry', 'Biology', 'भौतिकी', 'रसायन शास्त्र', 'जीव विज्ञान'];
+  const sstGroup9to12 = ['History', 'Geography', 'Political Science', 'Economics', 'इतिहास', 'भूगोल', 'राजनीति विज्ञान', 'अर्थशास्त्र'];
+  const sstGroup6to8 = ['History', 'Geography', 'Political Science', 'इतिहास', 'भूगोल', 'राजनीति विज्ञान'];
+  const mathNames = ['Mathematics', 'Math', 'गणित'];
+  const flatScienceNames = ['Science', 'विज्ञान'];
 
   if (selectedParentSubject === 'Science') {
-      subSubjects = rawSubjects.filter(s => scienceGroup.includes(s.name));
+      subSubjects = rawSubjects.filter(s => scienceGroup.includes(s.name) || flatScienceNames.includes(s.name));
   } else if (selectedParentSubject === 'Social Science') {
       subSubjects = rawSubjects.filter(s => isClass9to12 ? sstGroup9to12.includes(s.name) : sstGroup6to8.includes(s.name));
   } else {
-      // Build parent level view
-      rawSubjects.forEach(s => {
-          if (scienceGroup.includes(s.name) && isClass9to12) {
-              if (!displaySubjects.find(ds => ds.name === 'Science')) {
-                  displaySubjects.push({ id: 'science', name: 'Science', icon: 'science', color: 'bg-blue-50 text-blue-600' });
-              }
-          } else if ((sstGroup9to12.includes(s.name) && isClass9to12) || (sstGroup6to8.includes(s.name) && isClass6to8)) {
-              if (!displaySubjects.find(ds => ds.name === 'Social Science')) {
-                  displaySubjects.push({ id: 'sst', name: 'Social Science', icon: 'geo', color: 'bg-orange-50 text-orange-600' });
-              }
-          } else {
-              displaySubjects.push(s);
-          }
-      });
+      // Build parent level view — only Math, Science, Social Science
+      const hasScience = rawSubjects.some(s => scienceGroup.includes(s.name) || flatScienceNames.includes(s.name));
+      const hasSocial = rawSubjects.some(s => isClass9to12 ? sstGroup9to12.includes(s.name) : sstGroup6to8.includes(s.name));
+      const mathSub = rawSubjects.find(s => mathNames.includes(s.name));
+
+      if (hasScience) {
+          displaySubjects.push({ id: 'science', name: 'Science', icon: 'science', color: 'bg-purple-50 text-purple-600' });
+      }
+      if (hasSocial) {
+          displaySubjects.push({ id: 'sst', name: 'Social Science', icon: 'geo', color: 'bg-orange-50 text-orange-600' });
+      }
+      if (mathSub) {
+          displaySubjects.push(mathSub);
+      }
   }
 
   const handleSelect = (subject: Subject) => {
-      if (subject.name === 'Science' && isClass9to12) {
-          setSelectedParentSubject('Science');
+      if (subject.name === 'Science') {
+          // If only one flat Science subject exists (class 6-8), open it directly
+          const flatScience = rawSubjects.find(s => flatScienceNames.includes(s.name));
+          const splitScience = rawSubjects.filter(s => scienceGroup.includes(s.name));
+          if (splitScience.length > 0) {
+              setSelectedParentSubject('Science');
+          } else if (flatScience) {
+              onSelect(flatScience);
+          }
       } else if (subject.name === 'Social Science') {
           setSelectedParentSubject('Social Science');
       } else {

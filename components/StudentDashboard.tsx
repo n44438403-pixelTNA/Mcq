@@ -17,7 +17,7 @@ import { LessonActionModal } from './LessonActionModal';
 import { RedeemSection } from './RedeemSection';
 import { PrizeList } from './PrizeList';
 import { Store } from './Store';
-import {Globe, Layout, Gift, Cloud, Sparkles, Megaphone, Lock, BookOpen, AlertCircle, Edit, Settings, Play, Pause, RotateCcw, MessageCircle, Gamepad2, Timer, CreditCard, Send, CheckCircle, Mail, X, Ban, Smartphone, Trophy, ShoppingBag, ArrowRight, Video, Youtube, Home, User as UserIcon, Book, BookOpenText, List, BarChart3, Award, Bell, Headphones, LifeBuoy, WifiOff, Zap, Star, Crown, History, ListChecks, Rocket, Ticket, TrendingUp, BrainCircuit, FileText, CheckSquare, Menu, LayoutGrid, Compass, User as UserIconOutline, MessageSquare, Bot, HelpCircle, Database, Activity, Download, Calendar, LogOut, Clock} from 'lucide-react';
+import {Globe, Layout, Gift, Cloud, Sparkles, Megaphone, Lock, BookOpen, AlertCircle, Edit, Settings, Play, Pause, RotateCcw, MessageCircle, Gamepad2, Timer, CreditCard, Send, CheckCircle, Mail, X, Ban, Smartphone, Trophy, ShoppingBag, ArrowRight, Video, Youtube, Home, User as UserIcon, Book, BookOpenText, List, BarChart3, Award, Bell, Headphones, LifeBuoy, WifiOff, Zap, Star, Crown, History, ListChecks, Rocket, Ticket, TrendingUp, BrainCircuit, FileText, CheckSquare, Menu, LayoutGrid, Compass, User as UserIconOutline, MessageSquare, Bot, HelpCircle, Database, Activity, Download, Calendar, LogOut, Clock, LogIn, UserPlus, ChevronRight} from 'lucide-react';
 import { SubjectSelection } from './SubjectSelection';
 import { BannerCarousel } from './BannerCarousel';
 import { ChapterSelection } from './ChapterSelection'; // Imported for Video Flow
@@ -28,6 +28,7 @@ import { McqView } from './McqView'; // Imported for MCQ Flow
 import { MiniPlayer } from './MiniPlayer'; // Imported for Audio Flow
 import { HistoryPage } from './HistoryPage';
 import TeacherStore from './TeacherStore';
+import { Auth } from './Auth';
 import { Leaderboard } from './Leaderboard';
 import { SpinWheel } from './SpinWheel';
 import { fetchChapters, generateCustomNotes } from '../services/groq'; // Needed for Video Flow
@@ -177,7 +178,10 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
   }, [user.isPremium, user.subscriptionEndDate]);
 
   // --- POPUP LOGIC (EXPIRY WARNING, UPSELL, AND EVENT) ---
+  // ALL AUTO POPUPS DISABLED PER USER REQUEST
   useEffect(() => {
+      return; // Early return — no popups will be shown.
+      // eslint-disable-next-line no-unreachable
       const checkPopups = () => {
           const now = Date.now();
 
@@ -368,6 +372,7 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
   const [marksheetType, setMarksheetType] = useState<'MONTHLY' | 'ANNUAL'>('MONTHLY');
   const [showReferralPopup, setShowReferralPopup] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const [showDailyGreeting, setShowDailyGreeting] = useState(false);
   const [dailyGreetingMessage, setDailyGreetingMessage] = useState({ title: '', message: '', emoji: '' });
@@ -391,7 +396,9 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
           };
 
           setDailyGreetingMessage(greetings[dayName] || greetings['Monday']);
-          setShowDailyGreeting(true);
+          // POPUP DISABLED PER USER REQUEST — daily greeting popup will not show
+          // setShowDailyGreeting(true);
+          localStorage.setItem('nst_last_daily_greeting', dateString);
       }
   }, []);
 
@@ -423,7 +430,8 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
   useEffect(() => {
       const isNew = (Date.now() - new Date(user.createdAt).getTime()) < 10 * 60 * 1000;
       if (isNew && !user.redeemedReferralCode && !localStorage.getItem(`referral_shown_${user.id}`)) {
-          setShowReferralPopup(true);
+          // POPUP DISABLED PER USER REQUEST — referral popup will not show
+          // setShowReferralPopup(true);
           localStorage.setItem(`referral_shown_${user.id}`, 'true');
       }
   }, [user.id, user.createdAt, user.redeemedReferralCode]);
@@ -981,6 +989,16 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
               setContentViewStep('SUBJECTS');
           };
 
+          const ALL_BOARDS = (settings?.allowedBoards || ['CBSE', 'BSEB']).filter(b => b === 'CBSE' || b === 'BSEB');
+
+          const handleQuickBoardChange = (b: string) => {
+              if (b === (user.board || 'CBSE')) return;
+              handleUserUpdate({ ...user, board: b as any });
+              setSelectedSubject(null);
+              setSelectedChapter(null);
+              setContentViewStep('SUBJECTS');
+          };
+
           // Resume Last Lesson — pick the most recent MCQ history entry
           const lastResult = (user.mcqHistory && user.mcqHistory.length > 0) ? user.mcqHistory[0] : null;
 
@@ -1029,13 +1047,31 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
 
                 {/* CLASS QUICK SWITCHER — every user can browse any class */}
                 <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                        <h3 className="font-black text-slate-800 text-sm flex items-center gap-2 shrink-0">
                             <BookOpen className="text-blue-600" size={18} />
                             Choose Class
                         </h3>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">All open</span>
+                        {ALL_BOARDS.length > 1 ? (
+                            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                                {ALL_BOARDS.map(b => {
+                                    const active = (user.board || 'CBSE') === b;
+                                    return (
+                                        <button
+                                            key={b}
+                                            onClick={() => handleQuickBoardChange(b)}
+                                            className={`shrink-0 px-3 py-1 rounded-full font-black text-[11px] uppercase tracking-wide border-2 transition-all active:scale-95 ${active ? 'bg-purple-600 text-white border-purple-600 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-purple-400 hover:bg-purple-50'}`}
+                                        >
+                                            {b}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">All open</span>
+                        )}
                     </div>
+
                     <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
                         {ALL_CLASSES.map(c => {
                             const active = user.classLevel === c.id;
@@ -1057,26 +1093,26 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                     <button
                         onClick={handleResumeLast}
                         disabled={loadingChapters}
-                        className="w-full text-left bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 text-white rounded-3xl p-4 shadow-lg active:scale-[0.98] transition-all border border-white/10 disabled:opacity-60 disabled:cursor-wait"
+                        className="w-full text-left bg-white text-slate-800 rounded-3xl p-4 shadow-sm active:scale-[0.98] transition-all border border-slate-200 hover:border-blue-300 hover:shadow-md disabled:opacity-60 disabled:cursor-wait"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="shrink-0 w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
+                            <div className="shrink-0 w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
                                 {loadingChapters ? (
-                                    <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
                                 ) : (
-                                    <History size={22} className="text-white" />
+                                    <History size={22} className="text-blue-600" />
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
-                                    <span className="text-[10px] font-black tracking-widest uppercase text-white/70">Resume Last</span>
-                                    <span className="text-[10px] font-bold text-white/60 truncate">· {lastResult.subjectName}</span>
+                                    <span className="text-[10px] font-black tracking-widest uppercase text-blue-600">Resume Last</span>
+                                    <span className="text-[10px] font-bold text-slate-500 truncate">· {lastResult.subjectName}</span>
                                 </div>
-                                <div className="font-black text-base truncate leading-tight">{lastResult.chapterTitle}</div>
-                                <div className="flex items-center gap-3 mt-1 text-[11px] font-bold text-white/80">
-                                    <span className="flex items-center gap-1"><Trophy size={12} /> {lastResult.correctCount}/{lastResult.totalQuestions}</span>
-                                    <span className="flex items-center gap-1"><Clock size={12} /> {Math.round((lastResult.totalTimeSeconds || 0) / 60)}m</span>
-                                    <span className="flex items-center gap-1 ml-auto">Tap to retry <ArrowRight size={12} /></span>
+                                <div className="font-black text-base truncate leading-tight text-slate-800">{lastResult.chapterTitle}</div>
+                                <div className="flex items-center gap-3 mt-1 text-[11px] font-bold text-slate-600">
+                                    <span className="flex items-center gap-1"><Trophy size={12} className="text-amber-500" /> {lastResult.correctCount}/{lastResult.totalQuestions}</span>
+                                    <span className="flex items-center gap-1"><Clock size={12} className="text-slate-400" /> {Math.round((lastResult.totalTimeSeconds || 0) / 60)}m</span>
+                                    <span className="flex items-center gap-1 ml-auto text-blue-600">Tap to retry <ArrowRight size={12} /></span>
                                 </div>
                             </div>
                         </div>
@@ -1106,58 +1142,78 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                             <div className="grid grid-cols-3 gap-3">
                                 {(()=>{
                                     const rawSubjects = getSubjectsList(user.classLevel || '10', user.stream || 'Science', user.board);
-                                    let displaySubjects: any[] = [];
-                                    const isClass9to12 = ['9', '10', '11', '12'].includes(user.classLevel || '10');
-                                    const isClass6to8 = ['6', '7', '8'].includes(user.classLevel || '10');
-                                    const scienceGroup = ['Physics', 'Chemistry', 'Biology'];
-                                    const sstGroup9to12 = ['History', 'Geography', 'Political Science', 'Economics'];
-                                    const sstGroup6to8 = ['History', 'Geography', 'Political Science'];
+                                    const isBSEB = user.board === 'BSEB';
+                                    const findSubject = (matchNames: string[]) =>
+                                        rawSubjects.find(s => matchNames.includes(s.name));
 
-                                    rawSubjects.forEach(s => {
-                                        if (scienceGroup.includes(s.name) && isClass9to12) {
-                                            if (!displaySubjects.find(ds => ds.name === 'Science')) {
-                                                displaySubjects.push({ id: 'science', name: 'Science', icon: 'science', color: 'bg-blue-50 text-blue-600' });
-                                            }
-                                        } else if ((sstGroup9to12.includes(s.name) && isClass9to12) || (sstGroup6to8.includes(s.name) && isClass6to8)) {
-                                            if (!displaySubjects.find(ds => ds.name === 'Social Science')) {
-                                                displaySubjects.push({ id: 'sst', name: 'Social Science', icon: 'geo', color: 'bg-orange-50 text-orange-600' });
-                                            }
-                                        } else {
-                                            displaySubjects.push(s);
-                                        }
-                                    });
+                                    const mathSubject = findSubject(['Mathematics', 'Math', 'गणित']);
+                                    const hasScience = !!findSubject(['Science', 'Physics', 'Chemistry', 'Biology', 'विज्ञान', 'भौतिकी', 'रसायन शास्त्र', 'जीव विज्ञान']);
+                                    const hasSocial = !!findSubject(['Social Science', 'History', 'Geography', 'Political Science', 'Economics', 'सामाजिक विज्ञान', 'इतिहास', 'भूगोल', 'राजनीति विज्ञान', 'अर्थशास्त्र']);
 
-                                    return displaySubjects.map((subject) => {
-                                        if ((settings?.hiddenSubjects || []).includes(subject.id)) return null;
+                                    const tiles: Array<{ id: string; name: string; displayName: string; color: string; iconColor: string; bgColor: string; onClick: () => void }> = [];
+
+                                    if (hasScience) {
+                                        const flatScience = rawSubjects.find(s => ['Science', 'विज्ञान'].includes(s.name));
+                                        const splitScience = rawSubjects.filter(s => ['Physics', 'Chemistry', 'Biology', 'भौतिकी', 'रसायन शास्त्र', 'जीव विज्ञान'].includes(s.name));
+                                        tiles.push({
+                                            id: 'science',
+                                            name: 'Science',
+                                            displayName: isBSEB ? 'विज्ञान' : 'Science',
+                                            color: 'bg-purple-50 border-purple-100 text-purple-700',
+                                            iconColor: 'text-purple-600',
+                                            bgColor: 'purple',
+                                            onClick: () => {
+                                                onTabChange('COURSES');
+                                                if (splitScience.length > 0) {
+                                                    setInitialParentSubject('Science');
+                                                } else if (flatScience) {
+                                                    handleContentSubjectSelect(flatScience);
+                                                }
+                                            }
+                                        });
+                                    }
+                                    if (hasSocial) {
+                                        tiles.push({
+                                            id: 'sst',
+                                            name: 'Social Science',
+                                            displayName: isBSEB ? 'सामाजिक विज्ञान' : 'Social Science',
+                                            color: 'bg-orange-50 border-orange-100 text-orange-700',
+                                            iconColor: 'text-orange-600',
+                                            bgColor: 'orange',
+                                            onClick: () => {
+                                                onTabChange('COURSES');
+                                                setInitialParentSubject('Social Science');
+                                            }
+                                        });
+                                    }
+                                    if (mathSubject) {
+                                        tiles.push({
+                                            id: 'math',
+                                            name: 'Mathematics',
+                                            displayName: isBSEB ? 'गणित' : 'Math',
+                                            color: 'bg-blue-50 border-blue-100 text-blue-700',
+                                            iconColor: 'text-blue-600',
+                                            bgColor: 'blue',
+                                            onClick: () => {
+                                                onTabChange('COURSES');
+                                                handleContentSubjectSelect(mathSubject);
+                                            }
+                                        });
+                                    }
+
+                                    return tiles.map((tile) => {
+                                        if ((settings?.hiddenSubjects || []).includes(tile.id)) return null;
                                         return (
                                             <button
-                                                key={subject.id}
-                                                onClick={() => {
-                                                    onTabChange('COURSES');
-                                                    if (['Science', 'Social Science'].includes(subject.name)) {
-                                                        setInitialParentSubject(subject.name);
-                                                    } else {
-                                                        handleContentSubjectSelect(subject);
-                                                    }
-                                                }}
-                                                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl transition-all active:scale-95 border-2 ${
-                                                    subject.id.includes('science') ? 'bg-purple-50 border-purple-100 text-purple-700' :
-                                                    subject.id.includes('math') ? 'bg-blue-50 border-blue-100 text-blue-700' :
-                                                    subject.id.includes('sst') || subject.id.includes('social') ? 'bg-orange-50 border-orange-100 text-orange-700' :
-                                                    'bg-slate-50 border-slate-100 text-slate-700'
-                                                }`}
+                                                key={tile.id}
+                                                onClick={tile.onClick}
+                                                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl transition-all active:scale-95 border-2 ${tile.color}`}
                                             >
-                                                <div className={`p-2 rounded-full bg-white shadow-sm`}>
-                                                    {/* Simple Icon Mapping or default */}
-                                                    <BookOpen size={20} className={
-                                                        subject.id.includes('science') ? 'text-purple-600' :
-                                                        subject.id.includes('math') ? 'text-blue-600' :
-                                                        subject.id.includes('sst') || subject.id.includes('social') ? 'text-orange-600' :
-                                                        'text-slate-600'
-                                                    } />
+                                                <div className="p-2 rounded-full bg-white shadow-sm">
+                                                    <BookOpen size={20} className={tile.iconColor} />
                                                 </div>
                                                 <span className="text-[10px] font-bold uppercase text-center leading-tight">
-                                                    {subject.name}
+                                                    {tile.displayName}
                                                 </span>
                                             </button>
                                         );
@@ -1178,25 +1234,21 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                                         if (isLocked) { showAlert("🔒 Locked by Admin.", "ERROR"); return; }
                                         onTabChange('ANALYTICS');
                                     }}
-                                    className={`col-span-2 w-full relative overflow-hidden rounded-3xl p-5 shadow-md active:scale-[0.99] transition-all bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white flex items-center justify-between gap-4 ${isLocked ? 'opacity-60 grayscale cursor-not-allowed' : 'hover:shadow-lg'}`}
+                                    className={`col-span-2 w-full relative overflow-hidden rounded-3xl p-5 shadow-sm active:scale-[0.99] transition-all bg-white border border-slate-200 text-slate-800 flex items-center justify-between gap-4 ${isLocked ? 'opacity-60 grayscale cursor-not-allowed' : 'hover:border-blue-300 hover:shadow-md'}`}
                                 >
-                                    {/* Decorative background glow */}
-                                    <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-                                    <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-
                                     <div className="flex items-center gap-4 relative z-10">
-                                        <div className="bg-white/20 backdrop-blur-sm p-3 rounded-2xl border border-white/30">
-                                            <BarChart3 size={28} className="text-white" />
+                                        <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100">
+                                            <BarChart3 size={28} className="text-blue-600" />
                                         </div>
                                         <div className="text-left">
-                                            <div className="font-black text-lg tracking-tight leading-tight">My Analysis</div>
-                                            <div className="text-xs text-white/80 font-medium mt-0.5">Performance, scores & insights</div>
+                                            <div className="font-black text-lg tracking-tight leading-tight text-slate-800">My Analysis</div>
+                                            <div className="text-xs text-slate-500 font-medium mt-0.5">Performance, scores &amp; insights</div>
                                         </div>
                                     </div>
                                     <div className="relative z-10 flex items-center gap-2">
                                         {isLocked
-                                            ? <div className="bg-red-500 text-white p-1.5 rounded-full"><Lock size={14} /></div>
-                                            : <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-bold border border-white/30">View →</div>
+                                            ? <div className="bg-red-50 text-red-600 p-1.5 rounded-full border border-red-100"><Lock size={14} /></div>
+                                            : <div className="bg-blue-50 text-blue-700 rounded-full px-3 py-1.5 text-xs font-bold border border-blue-100">View →</div>
                                         }
                                     </div>
                                 </button>
@@ -1299,6 +1351,20 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
 
       // 4. LEGACY TABS (Mapped to new structure or kept as sub-views)
       if (activeTab === 'CUSTOM_PAGE') return <CustomBloggerPage onBack={() => onTabChange('HOME')} settings={settings} />;
+      if (activeTab === 'AUTH' as any) return (
+          <div className="p-4 flex items-center justify-center min-h-[50vh]">
+              <Auth onLogin={u => {
+                  if (typeof window !== 'undefined') {
+                      localStorage.setItem('nst_current_user', JSON.stringify(u));
+                  }
+                  handleUserUpdate(u);
+                  onTabChange('HOME');
+                  window.location.reload();
+              }} logActivity={(action, details, u) => {
+                  console.log("Auth Activity:", action, details);
+              }} />
+          </div>
+      );
       if ((activeTab as string) === 'DEEP_ANALYSIS') return <AiDeepAnalysis user={user} settings={settings} onUpdateUser={handleUserUpdate} onBack={() => onTabChange('HOME')} />;
       if (activeTab === 'UPDATES') return <UniversalInfoPage onBack={() => onTabChange('HOME')} />;
       if ((activeTab as string) === 'ANALYTICS') return <AnalyticsPage user={user} onBack={() => onTabChange('HOME')} settings={settings} onNavigateToChapter={onNavigateToChapter} />;
@@ -1316,6 +1382,16 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
       if ((activeTab as any) === 'TEACHER_STORE') {
           return <TeacherStore user={user} settings={settings} onRedeemSuccess={handleUserUpdate} />;
       }
+      if (activeTab === 'AUTH') return (
+          <div className="p-4 flex items-center justify-center min-h-[50vh]">
+              <Auth onLogin={u => {
+                  handleUserUpdate(u);
+                  onTabChange('HOME');
+              }} logActivity={(action, details, u) => {
+                  console.log("Auth Activity:", action, details);
+              }} />
+          </div>
+      );
       if (activeTab === 'PROFILE') return (
                 <div className="animate-in fade-in zoom-in duration-300 pb-4">
                     <div className={`rounded-3xl p-8 text-center mb-6 shadow-sm relative overflow-hidden transition-all duration-500 ${
@@ -1408,10 +1484,7 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                     </div>
 
                     <div className="space-y-4">
-                        <div className="bg-white rounded-xl p-4 border border-slate-200">
-                            <p className="text-xs font-bold text-slate-600 uppercase mb-1">Class</p>
-                            <p className="text-lg font-black text-slate-800">{user.classLevel} • {user.board} • {user.stream}</p>
-                        </div>
+
 
                         <div className="bg-white rounded-xl p-4 border border-slate-200">
                             <p className="text-xs font-bold text-slate-600 uppercase mb-1">Subscription</p>
@@ -1454,42 +1527,180 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                             </div>
                         </div>
 
-                        {/* MY DATA SECTION */}
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                            <h4 className="font-black text-slate-800 flex items-center gap-2">
-                                <Database size={18} className="text-slate-600"/> My Data
-                            </h4>
-                            <div className="grid grid-cols-2 gap-2">
+                        {/* RECOVERY LOGIN SETUP — mobile + password backup so user can recover account if Google sign-in fails */}
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200">
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-9 h-9 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center">
+                                        <Smartphone size={18} className="text-emerald-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-sm text-slate-800">Recovery Login</p>
+                                        <p className="text-[10px] text-slate-500 font-medium">Mobile + Password backup login</p>
+                                    </div>
+                                </div>
+                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full border ${
+                                    (user.mobile && user.mobile.length === 10 && user.password)
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                                }`}>
+                                    {(user.mobile && user.mobile.length === 10 && user.password) ? '✓ Set' : '⚠ Not Set'}
+                                </span>
+                            </div>
+
+                            <div className="space-y-2 mb-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Recovery Mobile</label>
+                                    <input
+                                        type="tel"
+                                        value={profileData.mobile}
+                                        onChange={(e) => setProfileData({...profileData, mobile: e.target.value.replace(/\D/g, '').slice(0,10)})}
+                                        placeholder="10-digit mobile number"
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Recovery Password</label>
+                                    <input
+                                        type="text"
+                                        value={profileData.newPassword}
+                                        onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})}
+                                        placeholder={user.password ? "•••••••• (leave blank to keep current)" : "Set a recovery password"}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    if (!profileData.mobile || profileData.mobile.length !== 10) {
+                                        showAlert("Please enter a valid 10-digit mobile number.", "ERROR");
+                                        return;
+                                    }
+                                    const updates: Partial<User> = { mobile: profileData.mobile };
+                                    if (profileData.newPassword && profileData.newPassword.length >= 4) {
+                                        updates.password = profileData.newPassword;
+                                    } else if (!user.password && (!profileData.newPassword || profileData.newPassword.length < 4)) {
+                                        showAlert("Recovery password must be at least 4 characters.", "ERROR");
+                                        return;
+                                    }
+                                    handleUserUpdate({ ...user, ...updates });
+                                    setProfileData({ ...profileData, newPassword: '' });
+                                    showAlert("Recovery details saved! You can now log in with mobile + password.", "SUCCESS");
+                                }}
+                                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm transition-colors"
+                            >
+                                Save Recovery Details
+                            </button>
+                            <p className="text-[10px] text-slate-500 mt-2 leading-snug">
+                                Use these from the Login screen → "Login with Mobile + Password" if you lose access to your Google account.
+                            </p>
+                        </div>
+
+                        {/* STORE BUTTON — quick navigation to in-app purchases */}
+                        <button
+                            onClick={() => onTabChange('STORE')}
+                            className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between gap-3 hover:shadow-xl active:scale-[0.99] transition-all relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+                            <div className="flex items-center gap-3 relative z-10">
+                                <div className="w-10 h-10 bg-white/15 backdrop-blur rounded-xl flex items-center justify-center border border-white/20">
+                                    <ShoppingBag size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <div className="font-black text-base flex items-center gap-2">Store <span className="bg-yellow-400 text-yellow-900 text-[9px] px-2 py-0.5 rounded-full font-black animate-pulse">BUY</span></div>
+                                    <div className="text-[11px] text-white/80 font-medium">Plans · Credits · Premium Upgrades</div>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-white/80 relative z-10" />
+                        </button>
+
+                        {/* SETTINGS BUTTON — opens modal containing all profile-related actions */}
+                        <button
+                            onClick={() => setShowSettingsModal(true)}
+                            className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between gap-3 hover:shadow-xl active:scale-[0.99] transition-all"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white/15 backdrop-blur rounded-xl flex items-center justify-center border border-white/20">
+                                    <Settings size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <div className="font-black text-base">Settings</div>
+                                    <div className="text-[11px] text-white/70 font-medium">Theme · Marksheet · Profile · Activity · Report</div>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-white/70" />
+                        </button>
+
+                        {/* LOGIN / CREATE ACCOUNT (Guest) — split into 2 buttons */}
+                        {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN') && (
+                            user.id.startsWith("guest_") ? (
+                                <div className="grid grid-cols-2 gap-3 mt-3">
+                                    <button
+                                        onClick={() => {
+                                            try { sessionStorage.setItem('auth_initial_view', 'LOGIN'); } catch (e) {}
+                                            onTabChange('AUTH' as any);
+                                        }}
+                                        className="bg-blue-50 p-3 rounded-xl border border-blue-200 flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors text-blue-700 font-bold text-sm"
+                                    >
+                                        <LogIn size={16} /> Login
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            try { sessionStorage.setItem('auth_initial_view', 'SIGNUP'); } catch (e) {}
+                                            onTabChange('AUTH' as any);
+                                        }}
+                                        className="bg-green-50 p-3 rounded-xl border border-green-200 flex items-center justify-center gap-2 hover:bg-green-100 transition-colors text-green-700 font-bold text-sm"
+                                    >
+                                        <UserPlus size={16} /> Create Account
+                                    </button>
+                                </div>
+                            ) : (
                                 <button
-                                    onClick={() => setViewingUserHistory(user)}
-                                    className="bg-white p-3 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-2"
+                                    onClick={onLogout}
+                                    className="w-full mt-3 bg-red-50 p-3 rounded-xl border border-red-100 flex items-center justify-center gap-2 hover:bg-red-100 transition-colors text-red-600 font-bold text-sm"
                                 >
-                                    <Activity size={14} className="text-blue-500"/> View Full Activity
+                                    <LogOut size={16} /> Logout
                                 </button>
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            showAlert("Generating Report...", "INFO");
+                            )
+                        )}
+                    </div>
+                </div>
+      );
 
-                                            // Create container
-                                            const element = document.createElement('div');
-                                            element.style.width = '210mm';
-                                            element.style.minHeight = '297mm';
-                                            element.style.padding = '40px';
-                                            element.style.background = '#ffffff';
-                                            element.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                                            element.style.position = 'fixed';
-                                            element.style.top = '-9999px';
-                                            element.style.left = '-9999px';
 
-                                            // Calculate Stats
-                                            const totalTests = user.mcqHistory?.length || 0;
-                                            const avgScore = totalTests > 0
-                                                ? Math.round((user.mcqHistory?.reduce((a, b) => a + (b.score/b.totalQuestions), 0) || 0) / totalTests * 100)
-                                                : 0;
-                                            const bestSubject = "General"; // simplified logic for now
+      // Handle Drill-Down Views (Video, PDF, MCQ, AUDIO)
+      if (activeTab === 'VIDEO' || activeTab === 'PDF' || activeTab === 'MCQ' || (activeTab as any) === 'AUDIO') {
+          return renderContentSection(activeTab as any);
+      }
 
-                                            element.innerHTML = `
+      if ((activeTab as string) === 'DOWNLOADS') {
+          return <div className="animate-in fade-in duration-300"><OfflineDownloads onBack={() => onTabChange('HOME')} /></div>;
+      }
+
+      return null;
+  };
+
+  // Helper: Download Optimized Report PDF (used by Settings Modal)
+  const handleDownloadReport = async () => {
+      try {
+          showAlert("Generating Report...", "INFO");
+          const element = document.createElement('div');
+          element.style.width = '210mm';
+          element.style.minHeight = '297mm';
+          element.style.padding = '40px';
+          element.style.background = '#ffffff';
+          element.style.fontFamily = 'Helvetica, Arial, sans-serif';
+          element.style.position = 'fixed';
+          element.style.top = '-9999px';
+          element.style.left = '-9999px';
+
+          const totalTests = user.mcqHistory?.length || 0;
+          const avgScore = totalTests > 0
+              ? Math.round((user.mcqHistory?.reduce((a, b) => a + (b.score/b.totalQuestions), 0) || 0) / totalTests * 100)
+              : 0;
+
+          element.innerHTML = `
                                                 <div style="border: 4px solid #1e293b; padding: 40px; height: 100%; box-sizing: border-box; position: relative;">
 
                                                     <!-- Header -->
@@ -1565,121 +1776,21 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                                                         This report is system generated by ${settings?.appName || 'NST AI'}. Verified & Valid.
                                                     </div>
                                                 </div>
-                                            `;
-
-                                            document.body.appendChild(element);
-
-                                            // Render
-                                            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-                                            const imgData = canvas.toDataURL('image/jpeg', 0.9);
-
-                                            const pdf = new jsPDF('p', 'mm', 'a4');
-                                            const pdfWidth = pdf.internal.pageSize.getWidth();
-                                            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-                                            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                                            pdf.save(`Report_${user.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
-
-                                            document.body.removeChild(element);
-                                            showAlert("✅ Report Downloaded!", "SUCCESS");
-
-                                        } catch (e) {
-                                            console.error("PDF Error", e);
-                                            showAlert("Failed to generate PDF. Please try again.", "ERROR");
-                                        }
-                                    }}
-                                    className="bg-white p-3 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-2"
-                                >
-                                    <Download size={14} className="text-red-500"/> Download Optimized Report
-                                </button>
-                            </div>
-                        </div>
-
-
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button
-                                onClick={() => { setShowSidebar(false); setEditMode(true); }}
-                                className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                            >
-                                <Edit size={20} className="text-slate-600" />
-                                <span className="text-[10px] font-bold text-slate-700">Edit Profile</span>
-                            </button>
-
-                            <button
-                                onClick={() => { setMarksheetType('MONTHLY'); setShowMonthlyReport(true); }}
-                                className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                            >
-                                <BarChart3 size={20} className="text-blue-500" />
-                                <span className="text-[10px] font-bold text-slate-700">Marksheet</span>
-                            </button>
-
-                            <button
-                                onClick={() => onTabChange('SUB_HISTORY' as any)}
-                                className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                            >
-                                <History size={20} className="text-purple-500" />
-                                <span className="text-[10px] font-bold text-slate-700">Sub History</span>
-                            </button>
-
-                            {/* TEACHER UPGRADE / STORE BUTTON */}
-                            <button
-                                onClick={() => onTabChange('TEACHER_STORE' as any)}
-                                className="bg-gradient-to-br from-purple-50 to-indigo-50 p-3 rounded-xl border border-purple-200 shadow-sm flex flex-col items-center justify-center gap-2 hover:bg-purple-100 transition-colors relative overflow-hidden group"
-                            >
-                                <div className="absolute inset-0 bg-white/20 group-hover:animate-pulse"></div>
-                                <Crown size={20} className="text-purple-600 relative z-10" />
-                                <span className="text-[10px] font-bold text-purple-800 relative z-10 text-center leading-tight">
-                                    {user.role === 'TEACHER' ? 'Teacher Store' : 'Upgrade to Teacher'}
-                                </span>
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    if (!isDarkMode) {
-                                        localStorage.setItem('nst_dark_theme_type', 'black');
-                                        onToggleDarkMode && onToggleDarkMode(true);
-                                    } else {
-                                        const currentType = localStorage.getItem('nst_dark_theme_type');
-                                        if (currentType === 'black') {
-                                            localStorage.setItem('nst_dark_theme_type', 'blue');
-                                            onToggleDarkMode && onToggleDarkMode(true);
-                                        } else {
-                                            onToggleDarkMode && onToggleDarkMode(false);
-                                        }
-                                    }
-                                }}
-                                className={`p-3 rounded-xl border shadow-sm flex flex-col items-center justify-center gap-2 transition-colors ${isDarkMode ? (localStorage.getItem('nst_dark_theme_type') === 'blue' ? 'bg-blue-900 border-blue-800' : 'bg-slate-800 border-slate-700') : 'bg-white border-slate-200 hover:bg-slate-50'}`}
-                            >
-                                {isDarkMode ? <Sparkles size={20} className={localStorage.getItem('nst_dark_theme_type') === 'blue' ? 'text-blue-300' : 'text-yellow-400'} /> : <Zap size={20} className="text-slate-600" />}
-                                <span className={`text-[10px] font-bold ${isDarkMode ? (localStorage.getItem('nst_dark_theme_type') === 'blue' ? 'text-blue-300' : 'text-slate-300') : 'text-slate-700'}`}>
-                                    {isDarkMode ? (localStorage.getItem('nst_dark_theme_type') === 'blue' ? 'Blue Mode' : 'Black Mode') : 'Light Mode'}
-                                </span>
-                            </button>
-
-                            {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN' || isImpersonating) && (
-                                <button
-                                    onClick={onLogout}
-                                    className="bg-red-50 p-3 rounded-xl border border-red-100 flex items-center justify-center gap-2 hover:bg-red-100 transition-colors text-red-600 font-bold text-sm"
-                                >
-                                    <LogOut size={16} /> Logout
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-      );
-
-
-      // Handle Drill-Down Views (Video, PDF, MCQ, AUDIO)
-      if (activeTab === 'VIDEO' || activeTab === 'PDF' || activeTab === 'MCQ' || (activeTab as any) === 'AUDIO') {
-          return renderContentSection(activeTab as any);
+          `;
+          document.body.appendChild(element);
+          const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+          const imgData = canvas.toDataURL("image/jpeg", 0.9);
+          const pdf = new jsPDF("p", "mm", "a4");
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+          pdf.save(`Report_${user.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
+          document.body.removeChild(element);
+          showAlert("✅ Report Downloaded!", "SUCCESS");
+      } catch (e) {
+          console.error("PDF Error", e);
+          showAlert("Failed to generate PDF. Please try again.", "ERROR");
       }
-
-      if ((activeTab as string) === 'DOWNLOADS') {
-          return <div className="animate-in fade-in duration-300"><OfflineDownloads onBack={() => onTabChange('HOME')} /></div>;
-      }
-
-      return null;
   };
 
   // --- TEACHER LOCKED SCREEN MOVED TO RENDER ---
@@ -1776,67 +1887,6 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                  </button>
              </div>
         )}
-
-        {/* NEW GLOBAL TOP BAR */}
-        <div className={`sticky top-0 z-[100] w-full shadow-md flex items-center justify-between px-4 py-3 transition-all duration-300 ${
-            user.isPremium
-                ? user.subscriptionLevel === 'ULTRA' ? 'bg-slate-900 text-white' :
-                  user.subscriptionLevel === 'BASIC' ? 'bg-gradient-to-r from-sky-500 to-cyan-600 text-white' :
-                  'bg-[var(--primary)] text-white'
-                : 'bg-gradient-to-r from-slate-600 to-slate-800 text-white grayscale border-b border-slate-700'
-        } ${isFullscreenMode ? 'hidden' : ''}`}>
-            <div className="flex items-center gap-3" onClick={() => setShowSidebar(true)}>
-                 <button className="p-1 rounded-full transition-colors hover:bg-white/20">
-                     <Menu size={20} className="text-white" />
-                 </button>
-                 <div className="flex items-center gap-2">
-                     {settings?.appLogo ? (
-                         <img src={settings.appLogo} alt="Logo" className="w-8 h-8 rounded-full object-cover border border-white/30" />
-                     ) : (
-                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/20 text-white">
-                             <BrainCircuit size={16} />
-                         </div>
-                     )}
-                     <div className="flex flex-col">
-                         <span className="font-black text-sm leading-tight tracking-tight">{settings?.appName || 'NST AI'}</span>
-                         <span className="text-[10px] font-medium flex items-center gap-1 text-slate-300">Hey, {user.name.split(' ')[0]} 👋 </span>
-                     </div>
-                 </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={() => setShowStudentGuide(true)}
-                    className="p-1.5 rounded-full transition-colors bg-white/10 hover:bg-white/20 text-white"
-                >
-                    <HelpCircle size={16} />
-                </button>
-                <button
-                    onClick={() => onTabChange('CUSTOM_PAGE')}
-                    className="p-1.5 rounded-full transition-colors relative bg-white/10 hover:bg-white/20 text-white"
-                >
-                    <Zap size={16} />
-                    {hasNewUpdate && <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
-                </button>
-
-                <div className="flex flex-col items-end">
-                    <button
-                        onClick={() => onTabChange('STORE')}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full shadow-sm text-[10px] font-black hover:scale-105 transition-transform bg-white text-slate-800"
-                    >
-                         <Crown size={12} className="fill-slate-800" /> {user.credits} CR
-                    </button>
-                    <span className="text-[8px] font-bold mt-0.5 uppercase tracking-widest text-white/90">
-                        {user.isPremium ? (user.subscriptionTier || 'PREMIUM') : 'FREE'}
-                    </span>
-                    {user.isPremium && user.subscriptionEndDate && user.subscriptionTier !== 'LIFETIME' && (
-                        <span className="text-[8px] font-bold text-white/90 uppercase tracking-widest mt-0.5">
-                            EXP: {new Date(user.subscriptionEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }).replace(/ /g, ' ').toUpperCase()}
-                        </span>
-                    )}
-                </div>
-            </div>
-        </div>
 
         {/* NOTIFICATION BAR (Only on Home) (COMPACT VERSION) */}
         {activeTab === 'HOME' && settings?.noticeText && (
@@ -2140,6 +2190,131 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
             </div>
         )}
 
+        {/* SETTINGS MODAL */}
+        {showSettingsModal && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
+                <div
+                    className="bg-white w-full max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="sticky top-0 bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center">
+                                <Settings size={18} className="text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900">Settings</h3>
+                                <p className="text-[11px] text-slate-500 font-medium">Manage your profile & data</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShowSettingsModal(false)}
+                            className="w-9 h-9 hover:bg-slate-100 rounded-full flex items-center justify-center"
+                        >
+                            <X size={18} className="text-slate-600" />
+                        </button>
+                    </div>
+
+                    {/* Options List */}
+                    <div className="p-3 space-y-2">
+                        {/* Edit Profile */}
+                        <button
+                            onClick={() => { setShowSettingsModal(false); setEditMode(true); }}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+                        >
+                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Edit size={18} className="text-slate-700" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-slate-900">Edit Profile</div>
+                                <div className="text-[11px] text-slate-500">Change name, class & details</div>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-400 flex-shrink-0" />
+                        </button>
+
+                        {/* Marksheet */}
+                        <button
+                            onClick={() => { setShowSettingsModal(false); setMarksheetType('MONTHLY'); setShowMonthlyReport(true); }}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 active:bg-blue-100 transition-colors text-left"
+                        >
+                            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <BarChart3 size={18} className="text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-slate-900">Marksheet</div>
+                                <div className="text-[11px] text-slate-500">View monthly performance report</div>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-400 flex-shrink-0" />
+                        </button>
+
+                        {/* Theme Toggle (Light / Black / Blue cycling) */}
+                        <button
+                            onClick={() => {
+                                if (!isDarkMode) {
+                                    localStorage.setItem('nst_dark_theme_type', 'black');
+                                    onToggleDarkMode && onToggleDarkMode(true);
+                                } else {
+                                    const currentType = localStorage.getItem('nst_dark_theme_type');
+                                    if (currentType === 'black') {
+                                        localStorage.setItem('nst_dark_theme_type', 'blue');
+                                        onToggleDarkMode && onToggleDarkMode(true);
+                                    } else {
+                                        onToggleDarkMode && onToggleDarkMode(false);
+                                    }
+                                }
+                            }}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-yellow-50 active:bg-yellow-100 transition-colors text-left"
+                        >
+                            <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                {isDarkMode ? <Sparkles size={18} className="text-yellow-600" /> : <Zap size={18} className="text-yellow-600" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-slate-900">
+                                    {isDarkMode ? (localStorage.getItem('nst_dark_theme_type') === 'blue' ? 'Blue Mode' : 'Black Mode') : 'Light Mode'}
+                                </div>
+                                <div className="text-[11px] text-slate-500">Tap to switch theme</div>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-400 flex-shrink-0" />
+                        </button>
+
+                        {/* View Full Activity */}
+                        <button
+                            onClick={() => { setShowSettingsModal(false); setViewingUserHistory(user); }}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 active:bg-purple-100 transition-colors text-left"
+                        >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Activity size={18} className="text-purple-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-slate-900">View Full Activity</div>
+                                <div className="text-[11px] text-slate-500">All your test history & logs</div>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-400 flex-shrink-0" />
+                        </button>
+
+                        {/* Download Optimized Report */}
+                        <button
+                            onClick={() => { setShowSettingsModal(false); handleDownloadReport(); }}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 active:bg-red-100 transition-colors text-left"
+                        >
+                            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Download size={18} className="text-red-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-slate-900">Download Optimized Report</div>
+                                <div className="text-[11px] text-slate-500">Generate PDF progress report</div>
+                            </div>
+                            <ChevronRight size={18} className="text-slate-400 flex-shrink-0" />
+                        </button>
+                    </div>
+
+                    {/* Safe area for mobile */}
+                    <div className="h-4" />
+                </div>
+            </div>
+        )}
+
         {/* NAME CHANGE MODAL */}
         {showNameChangeModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
@@ -2188,23 +2363,20 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
         <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.1)] z-50 pb-safe rounded-t-2xl">
             <div className="flex justify-around items-center h-14">
                 {(() => {
-                    const access = getFeatureAccess('NAV_HOME');
-                    if (access.isHidden) return null;
-                    const isLocked = !access.hasAccess;
+                    if (settings?.contentVisibility?.MCQ === false) return null;
+                    const isActive = activeTab === 'HOME';
                     return (
                         <button
                             onClick={() => {
-                                if (isLocked) { showAlert("🔒 Locked by Admin.", "ERROR"); return; }
                                 onTabChange('HOME');
                                 setContentViewStep('SUBJECTS');
                             }}
-                            className={`flex flex-col items-center justify-center w-full h-full relative ${activeTab === 'HOME' ? 'text-blue-600' : 'text-slate-500'} ${isLocked ? 'opacity-50 grayscale' : ''}`}
+                            className={`flex flex-col items-center justify-center w-full h-full relative ${isActive ? 'text-blue-600' : 'text-slate-500'}`}
                         >
                             <div className="relative">
-                                <Home size={20} fill={activeTab === 'HOME' && !isLocked ? "currentColor" : "none"} />
-                                {isLocked && <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 border border-white"><Lock size={8} className="text-white"/></div>}
+                                <CheckSquare size={20} fill={isActive ? "currentColor" : "none"} />
                             </div>
-                            <span className="text-[9px] font-bold mt-1">Home</span>
+                            <span className="text-[9px] font-bold mt-1">MCQ</span>
                         </button>
                     );
                 })()}
@@ -2226,27 +2398,6 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                                 {isLocked && <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 border border-white"><Lock size={8} className="text-white"/></div>}
                             </div>
                             <span className="text-[9px] font-bold mt-1">Revision</span>
-                        </button>
-                    );
-                })()}
-
-                {(() => {
-                    const access = getFeatureAccess('AI_CENTER');
-                    if (access.isHidden) return null;
-                    const isLocked = !access.hasAccess;
-                    return (
-                        <button
-                            onClick={() => {
-                                if (isLocked) { showAlert("🔒 Locked by Admin.", "ERROR"); return; }
-                                onTabChange('AI_HUB');
-                            }}
-                            className={`flex flex-col items-center justify-center w-full h-full relative ${activeTab === 'AI_HUB' ? 'text-blue-600' : 'text-slate-500'} ${isLocked ? 'opacity-50 grayscale' : ''}`}
-                        >
-                            <div className="relative">
-                                <Sparkles size={20} fill={activeTab === 'AI_HUB' && !isLocked ? "currentColor" : "none"} />
-                                {isLocked && <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 border border-white"><Lock size={8} className="text-white"/></div>}
-                            </div>
-                            <span className="text-[9px] font-bold mt-1">AI Hub</span>
                         </button>
                     );
                 })()}
@@ -2288,7 +2439,7 @@ export const StudentDashboard: React.FC<Props> = ({ user, dailyStudySeconds, onS
                                 <UserIconOutline size={20} fill={activeTab === 'PROFILE' && !isLocked ? "currentColor" : "none"} />
                                 {isLocked && <div className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 border border-white"><Lock size={8} className="text-white"/></div>}
                             </div>
-                            <span className="text-[9px] font-bold mt-1">Profile</span>
+                            <span className="text-[9px] font-bold mt-1">Settings</span>
                         </button>
                     );
                 })()}

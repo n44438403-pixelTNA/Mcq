@@ -23,7 +23,16 @@ const BLOCKED_DOMAINS = [
 ];
 
 export const Auth: React.FC<Props> = ({ onLogin, logActivity }) => {
-  const [view, setView] = useState<AuthView>('HOME');
+  const [view, setView] = useState<AuthView>(() => {
+      try {
+          const initial = sessionStorage.getItem('auth_initial_view');
+          if (initial === 'LOGIN' || initial === 'SIGNUP') {
+              sessionStorage.removeItem('auth_initial_view');
+              return initial as AuthView;
+          }
+      } catch (e) {}
+      return 'HOME';
+  });
   const [generatedId, setGeneratedId] = useState<string>('');
   const [formData, setFormData] = useState({
     id: '',

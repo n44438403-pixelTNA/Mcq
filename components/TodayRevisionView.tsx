@@ -233,33 +233,64 @@ export const TodayRevisionView: React.FC<Props> = ({ user, topics, onClose, onCo
                 </div>
             )}
 
-            {/* HEADER */}
-            <div className="bg-white border-b border-slate-100 p-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
-                <div>
-                    <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                        <BookOpen className="text-indigo-600" /> Today's Revision
-                    </h2>
-                    <p className="text-xs text-slate-600 font-bold">{displayList.length || topics.length} Topic{(displayList.length || topics.length) === 1 ? '' : 's'} to Review</p>
+            {/* HEADER — Redesigned with gradient + progress */}
+            <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white p-5 sticky top-0 z-20 shadow-xl">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 bg-white/15 backdrop-blur rounded-2xl flex items-center justify-center shrink-0 border border-white/20">
+                            <BookOpen size={24} />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Today's Plan</p>
+                            <h2 className="text-xl font-black truncate">Revision Session</h2>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <button
+                            onClick={() => {
+                                if(isPlayingAll) {
+                                    setIsPlayingAll(false);
+                                    setCurrentPlayingIndex(null);
+                                } else {
+                                    setIsPlayingAll(true);
+                                    setCurrentPlayingIndex(0);
+                                }
+                            }}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border border-white/20 ${isPlayingAll ? 'bg-red-500 animate-pulse' : 'bg-white/15 backdrop-blur hover:bg-white/25'}`}
+                            aria-label={isPlayingAll ? 'Pause' : 'Play'}
+                        >
+                            {isPlayingAll ? <Pause size={18} /> : <Play size={18} />}
+                        </button>
+                        <button
+                            onClick={() => setShowExitConfirm(true)}
+                            className="w-10 h-10 rounded-full bg-white/15 backdrop-blur hover:bg-white/25 flex items-center justify-center border border-white/20 transition-colors"
+                            aria-label="Close"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => {
-                            if(isPlayingAll) {
-                                setIsPlayingAll(false);
-                                setCurrentPlayingIndex(null);
-                            } else {
-                                setIsPlayingAll(true);
-                                setCurrentPlayingIndex(0);
-                            }
-                        }}
-                        className={`p-2 rounded-full transition-all ${isPlayingAll ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-indigo-100 text-indigo-600'}`}
-                    >
-                        {isPlayingAll ? <Pause size={20} /> : <Play size={20} />}
-                    </button>
-                    <button onClick={() => setShowExitConfirm(true)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 text-slate-600 transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
+
+                {/* PROGRESS STRIP */}
+                {(() => {
+                    const total = displayList.length || topics.length;
+                    const done = currentPlayingIndex !== null ? Math.min(currentPlayingIndex + (isPlayingAll ? 0 : 1), total) : 0;
+                    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                    return (
+                        <div className="mt-4">
+                            <div className="flex items-center justify-between text-[11px] font-black mb-2">
+                                <span className="text-white/80 uppercase tracking-wider">{total} Topic{total === 1 ? '' : 's'}</span>
+                                <span className="text-white">{done} / {total} read · {pct}%</span>
+                            </div>
+                            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-yellow-300 to-pink-300 rounded-full transition-all duration-500"
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* CONTENT */}
@@ -286,13 +317,21 @@ export const TodayRevisionView: React.FC<Props> = ({ user, topics, onClose, onCo
                                 badgeClass = "bg-blue-100 text-blue-700";
                             }
 
+                            // Accent stripe color per subject category
+                            let stripeColor = '#94a3b8';
+                            if (sub.includes('science') && !sub.includes('social')) stripeColor = '#6366f1';
+                            else if (sub.includes('social') || sub.includes('history') || sub.includes('geography')) stripeColor = '#f97316';
+                            else if (sub.includes('math')) stripeColor = '#3b82f6';
+                            else if (sub.includes('hindi') || sub.includes('english') || sub.includes('language')) stripeColor = '#a855f7';
+
                             return (
                                 <div
                                     key={index}
                                     ref={el => topicRefs.current[index] = el}
-                                    className={`bg-white p-6 rounded-2xl shadow-sm border transition-all duration-300 ${
+                                    className={`bg-white p-6 rounded-2xl shadow-sm border-l-4 border transition-all duration-300 relative overflow-hidden ${
                                         isCurrent ? 'border-indigo-500 ring-4 ring-indigo-50 scale-[1.02]' : 'border-slate-200'
                                     }`}
+                                    style={{ borderLeftColor: stripeColor }}
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <div>

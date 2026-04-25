@@ -17,12 +17,9 @@ export const StudentSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, u
         // --- LEARNING & PROGRESS ---
         { id: 'HISTORY', icon: History, label: 'Cloud History', color: 'text-slate-600', featureId: 'f21', category: 'LEARNING' },
         { id: 'ANALYTICS', icon: Trophy, label: 'Test Analysis', color: 'text-teal-600', featureId: 'f50', category: 'LEARNING' },
-        { id: 'AI_HISTORY' as any, icon: BrainCircuit, label: 'AI History', color: 'text-indigo-600', featureId: 'f101', category: 'LEARNING' },
-        { id: 'DOWNLOADS' as any, icon: Download, label: 'Offline Downloads', color: 'text-blue-500', category: 'LEARNING' },
 
         // --- PREMIUM & REWARDS ---
         { id: 'STORE', icon: Crown, label: 'Premium Store', color: 'text-yellow-600', featureId: 'f12', category: 'PREMIUM' },
-        { id: 'SUB_HISTORY' as any, icon: CreditCard, label: 'My Plan', color: 'text-blue-600', featureId: 'f11', category: 'PREMIUM' },
         { id: 'REDEEM', icon: Gift, label: 'Redeem Code', color: 'text-pink-600', category: 'PREMIUM' },
 
         // --- FUN & GAMES ---
@@ -117,14 +114,21 @@ export const StudentSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, u
                 </div>
 
                 {/* Footer Actions */}
-                {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN' || isImpersonating) && (
+                {(settings?.isLogoutEnabled !== false || user.role === 'ADMIN') && (
                     <div className="p-4 border-t border-slate-100 bg-slate-50">
                         <button
-                            onClick={onLogout}
+                            onClick={() => {
+                                if (user.id.startsWith("guest_")) {
+                                    onNavigate('AUTH' as any);
+                                    onClose();
+                                } else {
+                                    onLogout();
+                                }
+                            }}
                             className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold transition-all active:scale-95"
                         >
                             <LogOut size={20} />
-                            Logout
+                            {user.id.startsWith("guest_") ? "Login / Create Account" : "Logout"}
                         </button>
                     </div>
                 )}

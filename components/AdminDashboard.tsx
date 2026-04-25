@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { User, ViewState, SystemSettings, Subject, Chapter, MCQItem, RecoveryRequest, ActivityLogEntry, LeaderboardEntry, RecycleBinItem, Stream, Board, ClassLevel, GiftCode, SubscriptionPlan, CreditPackage, SpinReward, HtmlModule, PremiumNoteSlot, ContentInfoConfig, ContentInfoItem, SubscriptionHistoryEntry, UniversalAnalysisLog, ContentType, LessonContent, DeepDiveEntry, AdditionalNoteEntry, TeacherStorePlan, TeacherCode } from '../types';
-import { List, GraduationCap, LayoutDashboard, Users, Search, Trash2, Save, X, Eye, EyeOff, Shield, Megaphone, CheckCircle, ListChecks, Database, FileText, Monitor, Sparkles, Banknote, BrainCircuit, AlertOctagon, ArrowLeft, Key, Bell, ShieldCheck, Lock, Globe, Layers, Zap, PenTool, RefreshCw, RotateCcw, Plus, LogOut, Download, Upload, CreditCard, Ticket, Video, Image as ImageIcon, Type, Link, FileJson, Activity, AlertTriangle, Gift, Book, Mail, Edit3, MessageSquare, ShoppingBag, Cloud, Rocket, Code2, Layers as LayersIcon, Wifi, WifiOff, Copy, Crown, Gamepad2, Calendar, BookOpen, Image, HelpCircle, Youtube, Play, Star, Trophy, Palette, Settings, Headphones, Layout, Bot, LayoutDashboard as DashboardIcon, Loader2, Gauge, LayoutGrid, ArrowUpCircle, KeyRound, Award } from 'lucide-react';
+import { List, GraduationCap, LayoutDashboard, Users, Search, Trash2, Save, X, Eye, EyeOff, Shield, Megaphone, CheckCircle, ListChecks, Database, FileText, Monitor, Sparkles, Banknote, BrainCircuit, AlertOctagon, ArrowLeft, Key, Bell, ShieldCheck, Lock, Globe, Layers, Zap, PenTool, RefreshCw, RotateCcw, Plus, LogOut, Download, Upload, CreditCard, Ticket, Video, Image as ImageIcon, Type, Link, FileJson, Activity, AlertTriangle, Gift, Book, Mail, Edit3, MessageSquare, ShoppingBag, Cloud, Rocket, Code2, Layers as LayersIcon, Wifi, WifiOff, Copy, Crown, Gamepad2, Calendar, BookOpen, Image, HelpCircle, Youtube, Play, Star, Trophy, Palette, Settings, Headphones, Layout, Bot, LayoutDashboard as DashboardIcon, Loader2, Gauge, LayoutGrid, ArrowUpCircle, KeyRound, Award, Home } from 'lucide-react';
 import { getSubjectsList, DEFAULT_SUBJECTS, DEFAULT_APP_FEATURES, ALL_APP_FEATURES, STUDENT_APP_FEATURES, DEFAULT_CONTENT_INFO_CONFIG, ADMIN_PERMISSIONS, APP_VERSION, STATIC_SYLLABUS, LEVEL_UNLOCKABLE_FEATURES } from '../constants';
 import { fetchChapters, fetchLessonContent } from '../services/groq';
 import { runAutoPilot, runCommandMode } from '../services/autoPilot';
@@ -222,7 +222,7 @@ const MODELS = [
 
 const AdminDashboardInner: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, onImpersonate, logActivity, isDarkMode, onToggleDarkMode, user }) => {
 
-  const [activeTab, setActiveTab] = useState<AdminTab>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<AdminTab>('CONTENT_MCQ');
   const [powerTab, setPowerTab] = useState<'LIMITS' | 'PLAN_MATRIX' | 'FEATURE_LISTS'>('LIMITS');
   const [customBloggerCode, setCustomBloggerCode] = useState('');
   const [showVisibilityControls, setShowVisibilityControls] = useState(false); // NEW: Master Visibility Toggle
@@ -4432,6 +4432,19 @@ const AdminDashboardInner: React.FC<Props> = ({ onNavigate, settings, onUpdateSe
                               />
                               <p className="text-[10px] text-slate-500 mt-1">This video will play in the Custom Page. (Google Drive link)</p>
                           </div>
+                          <div className="md:col-span-2">
+                              <label className="text-xs font-bold text-blue-700 uppercase block mb-1 flex items-center gap-2">
+                                  <Home size={14} className="text-blue-600"/> Home Tab Redirect Link (Bottom Nav)
+                              </label>
+                              <input
+                                  type="text"
+                                  placeholder="https://1701.vercel.app/  OR  https://your-other-app.com"
+                                  value={localSettings.homeRedirectUrl || ''}
+                                  onChange={(e) => setLocalSettings({...localSettings, homeRedirectUrl: e.target.value})}
+                                  className="w-full p-2 bg-white border-2 border-blue-200 rounded-lg text-sm font-medium"
+                              />
+                              <p className="text-[10px] text-blue-600 mt-1">When a student taps the Home button in the bottom navigation, this link will open in fullscreen inside the app.</p>
+                          </div>
                       </div>
                   </div>
 
@@ -6313,7 +6326,9 @@ Capital of India?       Mumbai  Delhi   Kolkata Chennai 2       Delhi is the cap
                                   <h3 className="font-bold text-slate-700 text-lg mb-3">Total Questions: {(activeTab === 'CONTENT_TEST' ? editingTestMcqs : editingMcqs).length}</h3>
                                   <div className="flex flex-wrap gap-2.5 items-center">
                                       <button onClick={() => deleteAllMcqs(activeTab === 'CONTENT_TEST')} className="bg-red-50 text-red-600 border border-red-200 px-3.5 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors">Delete All</button>
-                                      <button onClick={() => addMcq(activeTab === 'CONTENT_TEST')} className="bg-white border border-blue-200 text-blue-600 px-3.5 py-2 rounded-lg text-sm font-bold hover:bg-blue-50">+ Add Question</button>
+                                      <button onClick={() => addMcq(activeTab === 'CONTENT_TEST')} className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3.5 rounded-xl text-base font-extrabold shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition-all flex items-center gap-2 border-2 border-white ring-2 ring-blue-200">
+                                          <Plus size={20} strokeWidth={3} /> Add MCQ
+                                      </button>
                                       <button
                                           onClick={() => {
                                               const list = activeTab === 'CONTENT_TEST' ? editingTestMcqs : editingMcqs;

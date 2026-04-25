@@ -379,6 +379,7 @@ export interface SystemSettings {
   mcqAnalysisCost?: number;
   appShortName?: string; // e.g. "IIC"
   officialAppUrl?: string; // NEW: Play Store Link
+  homeRedirectUrl?: string; // NEW: External app link opened from bottom-nav Home tab
   bannerConfig?: {
       top: BannerSettings;
       bottom: BannerSettings;
@@ -1046,7 +1047,7 @@ export interface LessonContent {
   analytics?: any; // For passing full analytics data
 }
 
-export type ViewState = 'ONBOARDING' | 'BOARDS' | 'CLASSES' | 'STREAMS' | 'SUBJECTS' | 'CHAPTERS' | 'LESSON' | 'ADMIN_DASHBOARD' | 'AUDIO_STUDIO' | 'STUDENT_DASHBOARD' | 'UNIVERSAL_CHAT' | 'RULES' | 'IIC' | 'LEADERBOARD';
+export type ViewState = 'ONBOARDING' | 'BOARDS' | 'CLASSES' | 'STREAMS' | 'SUBJECTS' | 'CHAPTERS' | 'LESSON' | 'ADMIN_DASHBOARD' | 'AUDIO_STUDIO' | 'STUDENT_DASHBOARD' | 'UNIVERSAL_CHAT' | 'RULES' | 'IIC' | 'LEADERBOARD' | 'AUTH';
 
 export interface WeeklyTest {
   id: string;

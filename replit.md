@@ -6,6 +6,18 @@ This is an AI-powered educational platform called "SWG (IIC)" / "NST AI Assistan
 
 Preferred communication style: Simple, everyday Hindi/Hinglish.
 
+## Profile Page Settings Consolidation (April 2026)
+- **Store button:** A new full-width purple/indigo gradient "Store" button on the Profile page navigates to the in-app Store tab where users can buy plans, credits, and premium upgrades.
+- **Settings button:** A single full-width "Settings" button on the Profile page opens a bottom-sheet modal containing 5 options: Edit Profile, Marksheet, Theme toggle (Light → Black → Blue), View Full Activity, and Download Optimized Report.
+- **Login split:** For guest users, the previous combined "Login / Create Account" button is now two separate buttons — "Login" (blue) and "Create Account" (green). They set `sessionStorage.auth_initial_view` to `'LOGIN'` or `'SIGNUP'` so `Auth.tsx` opens directly on the correct view.
+- **Logout:** For logged-in users, a single full-width "Logout" button remains below the Settings button.
+- **Removed:** The old "My Data" section and the 4-button grid (Edit Profile / Marksheet / Theme / Logout) on the Profile page.
+
+## Free Tier Access Expansion (April 2026)
+- **MCQ daily limits (NSTA_DEFAULT_FEATURES → MCQ_FREE):** Free = 30/day, Basic = 50/day, Ultra = 100/day.
+- **Revision Hub:** Level lock for `REVISION_HUB` lowered from Level 20 to Level 1 (`LEVEL_UP_CONFIG` in constants.ts), so free users with low level can use it. The hub itself already has a Free mode (`hubMode = 'FREE'`) for non-premium users.
+- **Notes for Free users:** `PREMIUM_NOTES` allowedTiers expanded to `['FREE','BASIC','ULTRA']` with `creditCost: 0`, and a new `NOTES_ACCESS` entry is added (FREE/BASIC/ULTRA) so free users can read notes without paying credits.
+
 ## Auth & Onboarding Redesign (April 2026)
 - **Account creation:** Google sign-in only — no email/password signup, no name/class/board onboarding wizard.
 - **Login:** Google sign-in is the primary path.

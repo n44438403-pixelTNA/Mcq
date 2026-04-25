@@ -123,7 +123,7 @@ export const getSubjectsList = (classLevel: string, stream: string | null, board
   const customKeys = allKeys.filter(k => !coreKeys.includes(k));
 
   let selectedSubjects: Subject[] = [];
-  const commonSubjects = [pool.english, pool.hindi, pool.computer];
+  const commonSubjects: Subject[] = [];
 
   if (classLevel === 'COMPETITION') {
       selectedSubjects = [
@@ -164,12 +164,6 @@ export const getSubjectsList = (classLevel: string, stream: string | null, board
           juniorSubjects.push(pool.science, pool.sst);
       }
 
-      juniorSubjects.push(
-          pool.english,
-          pool.hindi,
-          pool.sanskrit,
-          pool.computer
-      );
       selectedSubjects = juniorSubjects.filter(Boolean);
   }
   else {
@@ -426,7 +420,7 @@ export const LEVEL_UP_CONFIG = [
     { level: 17, featureId: 'AVATAR_CUSTOM', label: 'Custom Avatar', description: 'Change Profile Picture' },
     { level: 18, featureId: 'WEEKLY_TESTS', label: 'Weekly Tests', description: 'Participate in Tests' },
     { level: 19, featureId: 'RESULT_SHARE', label: 'Share Results', description: 'Share Marksheets' },
-    { level: 20, featureId: 'REVISION_HUB', label: 'Revision Hub', description: 'Smart Revision Tools' },
+    { level: 1, featureId: 'REVISION_HUB', label: 'Revision Hub', description: 'Smart Revision Tools' },
     { level: 21, featureId: 'FLASH_CARDS', label: 'Flash Cards', description: 'Quick Recall Mode' },
     { level: 22, featureId: 'TTS_SPEED', label: 'TTS Speed Control', description: 'Adjust Audio Speed' },
     { level: 23, featureId: 'FOCUS_MODE', label: 'Focus Mode', description: 'Distraction Free View' },
@@ -462,13 +456,14 @@ export const LEVEL_UP_CONFIG = [
 export const NSTA_DEFAULT_FEATURES = [
     { category: '📑 NOTES', id: 'QUICK_REVISION', label: 'Quick Revision', visible: true, limits: { free: 2, basic: undefined, ultra: undefined }, creditCost: 0 },
     { category: '📑 NOTES', id: 'DEEP_DIVE', label: 'Deep Dive Notes', visible: true, allowedTiers: ['FREE', 'BASIC', 'ULTRA'], limits: {}, creditCost: 0 },
-    { category: '📑 NOTES', id: 'PREMIUM_NOTES', label: 'Premium Notes', visible: true, allowedTiers: ['BASIC', 'ULTRA'], limits: { basic: undefined, ultra: undefined }, creditCost: 5 },
+    { category: '📑 NOTES', id: 'PREMIUM_NOTES', label: 'Premium Notes', visible: true, allowedTiers: ['FREE', 'BASIC', 'ULTRA'], limits: { free: undefined, basic: undefined, ultra: undefined }, creditCost: 0 },
+    { category: '📑 NOTES', id: 'NOTES_ACCESS', label: 'Notes Access', visible: true, allowedTiers: ['FREE', 'BASIC', 'ULTRA'], limits: {}, creditCost: 0 },
     { category: '📑 NOTES', id: 'ADDITIONAL_NOTES', label: 'Additional Resources', visible: true, limits: { free: 1, basic: undefined, ultra: undefined }, creditCost: 0 },
     { category: '🎬 VIDEO', id: 'VIDEO_ACCESS', label: 'Video Lectures', visible: true, limits: { free: 2, basic: undefined, ultra: undefined }, creditCost: 0 },
     { category: '🎬 VIDEO', id: 'PREMIUM_VIDEO', label: 'Premium Video Series', visible: true, allowedTiers: ['ULTRA'], limits: {}, creditCost: 10 },
     { category: '🎬 VIDEO', id: 'ADMIN_PREMIUM_VIDEO', label: 'Premium Video', visible: true, allowedTiers: ['ULTRA'], limits: {}, creditCost: 10 },
     { category: '🎧 AUDIO', id: 'AUDIO_LIBRARY', label: 'Audio Library', visible: true, allowedTiers: ['ULTRA'], limits: {}, creditCost: 0 },
-    { category: '📝 MCQ', id: 'MCQ_FREE', label: 'Free Practice', visible: true, limits: { free: 50, basic: undefined, ultra: undefined }, creditCost: 0 },
+    { category: '📝 MCQ', id: 'MCQ_FREE', label: 'Free Practice', visible: true, allowedTiers: ['FREE', 'BASIC', 'ULTRA'], limits: { free: 30, basic: 50, ultra: 100 }, creditCost: 0 },
     { category: '📝 MCQ', id: 'MCQ_PREMIUM', label: 'Premium Tests', visible: true, allowedTiers: ['BASIC', 'ULTRA'], limits: {}, creditCost: 0 },
     { category: '🔄 REVISION', id: 'REVISION_HUB_FREE', label: 'Free Revision', visible: true, allowedTiers: ['FREE', 'BASIC', 'ULTRA'], limits: { free: 1 }, creditCost: 0 },
     { category: '🔄 REVISION', id: 'REVISION_HUB_PREMIUM', label: 'Premium Revision', visible: true, allowedTiers: ['BASIC', 'ULTRA'], limits: {}, creditCost: 0 },
